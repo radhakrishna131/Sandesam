@@ -74,6 +74,7 @@ export interface Message {
   fileUrl?: string | null;
   fileType?: string | null;
   fileName?: string | null;
+  isDeleted: boolean;
   timestamp: string;
   sender?: User | null;
 }

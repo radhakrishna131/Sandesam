@@ -1,0 +1,46 @@
+Update the existing chat application **“Sandesam”** by adding message deletion and chat deletion features. The app already supports real-time messaging, media sharing, and user authentication using phone number and password.
+
+Add the following new features and ensure they are fully functional.
+
+FEATURE 1: Delete Message for Everyone
+Users must be able to delete a specific message so that it disappears for both the sender and the receiver.
+
+Requirements:
+
+* Add a delete option when the user long-presses or clicks a message.
+* The option should say **“Delete for everyone”**.
+* When this option is selected, the message should be marked as deleted in the database.
+* Instead of removing the message completely, update the message record with a flag like **is_deleted = true**.
+* In the chat interface, replace the deleted message text with **“This message was deleted”**.
+* The update must propagate in real time so the other user also sees the deletion instantly.
+
+FEATURE 2: Delete Entire Chat
+Users must be able to delete an entire conversation.
+
+Requirements:
+
+* Add a **Delete Chat** option in the chat settings or chat header menu.
+* When clicked, show a confirmation dialog asking if the user wants to delete the whole chat.
+* If confirmed, remove all messages related to that chat from the database.
+* The chat should disappear from the user’s chat list.
+* Ensure this action updates the UI immediately.
+
+DATABASE UPDATE
+Update the messages schema to include a field like:
+
+* is_deleted (boolean, default false)
+
+REAL-TIME UPDATES
+If the application uses WebSockets or Socket.io, emit real-time events so that:
+
+* When a message is deleted, both users see the change instantly.
+* When a chat is deleted, the chat list refreshes automatically.
+
+UI REQUIREMENTS
+
+* Add a delete icon or menu for messages.
+* Show deleted messages as **“This message was deleted”**.
+* Add a **Delete Chat** option in the chat menu.
+* Ensure the chat layout remains stable after deletion.
+
+The implementation must work smoothly with the existing Sandesam real-time chat system and must not break current messaging functionality.

@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, timestamp, boolean } from "drizzle-orm/pg-core";
 import { chatsTable } from "./chats";
 import { usersTable } from "./users";
 
@@ -14,6 +14,7 @@ export const messagesTable = pgTable("messages", {
   fileUrl: text("file_url"),
   fileType: text("file_type"),
   fileName: text("file_name"),
+  isDeleted: boolean("is_deleted").default(false).notNull(),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 

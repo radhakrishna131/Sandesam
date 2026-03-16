@@ -43,7 +43,7 @@ export default function ChatPage() {
       <Sidebar selectedChatId={selectedChatId} onSelectChat={setSelectedChatId} />
       
       {selectedChatId ? (
-        <ChatWindow chatId={selectedChatId} />
+        <ChatWindow chatId={selectedChatId} onChatDeleted={() => setSelectedChatId(null)} />
       ) : (
         <div className="flex-1 hidden md:flex flex-col items-center justify-center bg-background relative z-0">
           <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none">

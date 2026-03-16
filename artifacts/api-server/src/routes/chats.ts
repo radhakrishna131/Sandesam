@@ -5,6 +5,7 @@ import { eq, or, and, desc } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth.js";
 import { io } from "../index.js";
 
+
 const router = Router();
 
 function formatUser(user: typeof usersTable.$inferSelect) {
@@ -28,6 +29,7 @@ function formatMessage(msg: typeof messagesTable.$inferSelect, sender?: typeof u
     fileUrl: msg.fileUrl ?? null,
     fileType: msg.fileType ?? null,
     fileName: msg.fileName ?? null,
+    isDeleted: msg.isDeleted,
     timestamp: msg.timestamp.toISOString(),
     sender: sender ? formatUser(sender) : null,
   };
@@ -214,6 +216,97 @@ router.post("/:chatId/messages", requireAuth, async (req, res) => {
     res.status(201).json(formatted);
   } catch (err) {
     console.error("Send message error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.delete("/:chatId/messages/:messageId", requireAuth, async (req, res) => {
+  const userId = req.session.userId!;
+  const chatId = parseInt(req.params.chatId);
+  const messageId = parseInt(req.params.messageId);
+
+  if (isNaN(chatId) || isNaN(messageId)) {
+    res.status(400).json({ error: "Invalid IDs" });
+    return;
+  }
+
+  try {
+    const [chat] = await db.select().from(chatsTable)
+      .where(
+        and(
+          eq(chatsTable.chatId, chatId),
+          or(eq(chatsTable.user1Id, userId), eq(chatsTable.user2Id, userId))
+        )
+      ).limit(1);
+
+    if (!chat) {
+      res.status(403).json({ error: "Access denied" });
+      return;
+    }
+
+    const [msg] = await db.select().from(messagesTable)
+      .where(and(eq(messagesTable.messageId, messageId), eq(messagesTable.chatId, chatId)))
+      .limit(1);
+
+    if (!msg) {
+      res.status(404).json({ error: "Message not found" });
+      return;
+    }
+
+    if (msg.senderId !== userId) {
+      res.status(403).json({ error: "You can only delete your own messages" });
+      return;
+    }
+
+    const [updated] = await db.update(messagesTable)
+      .set({ isDeleted: true })
+      .where(eq(messagesTable.messageId, messageId))
+      .returning();
+
+    const formatted = formatMessage(updated);
+    io.to(`chat:${chatId}`).emit("messageDeleted", formatted);
+
+    res.json(formatted);
+  } catch (err) {
+    console.error("Delete message error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.delete("/:chatId", requireAuth, async (req, res) => {
+  const userId = req.session.userId!;
+  const chatId = parseInt(req.params.chatId);
+
+  if (isNaN(chatId)) {
+    res.status(400).json({ error: "Invalid chat ID" });
+    return;
+  }
+
+  try {
+    const [chat] = await db.select().from(chatsTable)
+      .where(
+        and(
+          eq(chatsTable.chatId, chatId),
+          or(eq(chatsTable.user1Id, userId), eq(chatsTable.user2Id, userId))
+        )
+      ).limit(1);
+
+    if (!chat) {
+      res.status(403).json({ error: "Access denied" });
+      return;
+    }
+
+    await db.delete(messagesTable).where(eq(messagesTable.chatId, chatId));
+    await db.delete(chatsTable).where(eq(chatsTable.chatId, chatId));
+
+    const otherUserId = chat.user1Id === userId ? chat.user2Id : chat.user1Id;
+    io.to(`chat:${chatId}`).emit("chatDeleted", { chatId, deletedBy: userId });
+    io.to(`user:${userId}`).emit("chatDeleted", { chatId, deletedBy: userId });
+    io.to(`user:${otherUserId}`).emit("chatDeleted", { chatId, deletedBy: userId });
+
+    res.json({ message: "Chat deleted successfully" });
+  } catch (err) {
+    console.error("Delete chat error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
