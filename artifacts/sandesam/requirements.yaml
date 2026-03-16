@@ -1,0 +1,24 @@
+packages:
+  "socket.io-client": "Real-time bidirectional event-based communication"
+  "date-fns": "Modern date formatting for chat timestamps"
+  "react-hook-form": "Form state management and validation"
+  "@hookform/resolvers": "Zod resolver for react-hook-form"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility to efficiently merge Tailwind CSS classes"
+  "lucide-react": "Beautiful, consistent icon set"
+
+images:
+  - path: "artifacts/sandesam/public/images/auth-bg.png"
+    description: "Abstract fluid gradient background in dark deep teal and emerald colors, sleek, modern, tech-focused, blurry glassmorphism style"
+    aspect_ratio: "16:9"
+  - path: "artifacts/sandesam/public/images/empty-chat.png"
+    description: "Minimalist abstract 3D illustration of a floating chat bubble, dark mode, moody lighting, subtle emerald green highlights"
+    aspect_ratio: "1:1"
+  - path: "artifacts/sandesam/public/images/logo-icon.png"
+    description: "Modern minimalist logo icon for a messaging app, featuring an abstract S shape in vibrant teal gradient on a dark background"
+    aspect_ratio: "1:1"
+
+notes:
+  - Expecting socket.io server to be available on the same host/port.
+  - Relying on @workspace/api-client-react for TanStack Query hooks and types.
+  - Using cookie-based auth, so API calls must include credentials (handled by generated hooks if configured, but assuming fetch handles cookies).

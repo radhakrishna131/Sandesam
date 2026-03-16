@@ -1,22 +1,30 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Sandesam Chat API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: users
+    description: User profile operations
+  - name: chats
+    description: Chat operations
+  - name: messages
+    description: Message operations
+  - name: upload
+    description: File upload operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +32,358 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/signup:
+    post:
+      operationId: signup
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupRequest"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Phone number already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with phone and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current user
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/forgot-password/verify:
+    post:
+      operationId: verifyDob
+      tags: [auth]
+      summary: Verify phone + DOB for password reset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyDobRequest"
+      responses:
+        "200":
+          description: Verification successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifyDobResponse"
+        "400":
+          description: Verification failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/forgot-password/reset:
+    post:
+      operationId: resetPassword
+      tags: [auth]
+      summary: Reset password after DOB verification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordRequest"
+      responses:
+        "200":
+          description: Password reset successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/profile:
+    put:
+      operationId: updateProfile
+      tags: [users]
+      summary: Update user profile (username, DOB, profile picture)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/search:
+    get:
+      operationId: searchUsers
+      tags: [users]
+      summary: Search users by phone number
+      parameters:
+        - name: phone
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSearchResults"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/{userId}:
+    get:
+      operationId: getUserById
+      tags: [users]
+      summary: Get a user by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /chats:
+    get:
+      operationId: getChats
+      tags: [chats]
+      summary: Get all chats for current user
+      responses:
+        "200":
+          description: List of chats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatList"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createChat
+      tags: [chats]
+      summary: Start or get a chat with another user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateChatRequest"
+      responses:
+        "200":
+          description: Chat created or existing chat returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Chat"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /chats/{chatId}/messages:
+    get:
+      operationId: getMessages
+      tags: [messages]
+      summary: Get messages for a chat
+      parameters:
+        - name: chatId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: before
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Messages list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageList"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: sendMessage
+      tags: [messages]
+      summary: Send a message in a chat
+      parameters:
+        - name: chatId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendMessageRequest"
+      responses:
+        "201":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /upload/file:
+    post:
+      operationId: uploadFile
+      tags: [upload]
+      summary: Upload a file (image, video, document)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+                - file
+      responses:
+        "200":
+          description: File uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +394,234 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    SignupRequest:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+        password:
+          type: string
+      required:
+        - phoneNumber
+        - password
+
+    LoginRequest:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+        password:
+          type: string
+      required:
+        - phoneNumber
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        profileComplete:
+          type: boolean
+      required:
+        - user
+        - profileComplete
+
+    VerifyDobRequest:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+        dateOfBirth:
+          type: string
+      required:
+        - phoneNumber
+        - dateOfBirth
+
+    VerifyDobResponse:
+      type: object
+      properties:
+        resetToken:
+          type: string
+      required:
+        - resetToken
+
+    ResetPasswordRequest:
+      type: object
+      properties:
+        resetToken:
+          type: string
+        newPassword:
+          type: string
+      required:
+        - resetToken
+        - newPassword
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        dateOfBirth:
+          type: string
+        profilePictureUrl:
+          type: string
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        phoneNumber:
+          type: string
+        username:
+          type: string
+          nullable: true
+        dateOfBirth:
+          type: string
+          nullable: true
+        profilePictureUrl:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        lastSeen:
+          type: string
+          nullable: true
+      required:
+        - id
+        - phoneNumber
+        - createdAt
+
+    UserSearchResults:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+      required:
+        - users
+
+    Chat:
+      type: object
+      properties:
+        chatId:
+          type: integer
+        otherUser:
+          $ref: "#/components/schemas/User"
+        lastMessage:
+          $ref: "#/components/schemas/Message"
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - chatId
+        - otherUser
+        - createdAt
+
+    ChatList:
+      type: object
+      properties:
+        chats:
+          type: array
+          items:
+            $ref: "#/components/schemas/Chat"
+      required:
+        - chats
+
+    CreateChatRequest:
+      type: object
+      properties:
+        otherUserId:
+          type: integer
+      required:
+        - otherUserId
+
+    Message:
+      type: object
+      properties:
+        messageId:
+          type: integer
+        chatId:
+          type: integer
+        senderId:
+          type: integer
+        messageText:
+          type: string
+          nullable: true
+        fileUrl:
+          type: string
+          nullable: true
+        fileType:
+          type: string
+          nullable: true
+        fileName:
+          type: string
+          nullable: true
+        timestamp:
+          type: string
+        sender:
+          $ref: "#/components/schemas/User"
+          nullable: true
+      required:
+        - messageId
+        - chatId
+        - senderId
+        - timestamp
+
+    MessageList:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+      required:
+        - messages
+
+    SendMessageRequest:
+      type: object
+      properties:
+        messageText:
+          type: string
+          nullable: true
+        fileUrl:
+          type: string
+          nullable: true
+        fileType:
+          type: string
+          nullable: true
+        fileName:
+          type: string
+          nullable: true
+
+    UploadResponse:
+      type: object
+      properties:
+        url:
+          type: string
+        fileType:
+          type: string
+        fileName:
+          type: string
+      required:
+        - url
+        - fileType
+        - fileName

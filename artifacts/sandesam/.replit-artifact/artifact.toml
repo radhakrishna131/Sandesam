@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Sandesam"
+version = "1.0.0"
+id = "artifacts/sandesam"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+localPort = 26024
+name = "web"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/sandesam run dev"
+
+[services.env]
+PORT = "26024"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/sandesam", "run", "build"]
+publicDir = "artifacts/sandesam/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
